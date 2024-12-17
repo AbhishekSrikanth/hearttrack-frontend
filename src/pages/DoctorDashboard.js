@@ -13,24 +13,63 @@ import {
   DialogContent,
   TextField,
   DialogActions,
+  Box,
+  Typography,
+  IconButton,
 } from '@mui/material';
 
+import HomeButton from '../components/HomeButton';
 import LogoutButton from '../components/LogoutButton';
+import { styled } from '@mui/system';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
+// Styled teal container
+const Container = styled(Box)({
+  backgroundColor: '#008080', // Teal background
+  minHeight: '100vh',
+  color: '#fff',
+  padding: '20px',
+});
+
+// Styled table container
+const TableContainer = styled(Box)({
+  margin: '20px auto',
+  padding: '20px',
+  maxWidth: '90%',
+  backgroundColor: '#fff',
+  borderRadius: '10px',
+  boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)',
+  overflowX: 'auto',
+});
+
+// Styled circular indigo button
+const CircularButton = styled(IconButton)({
+  borderRadius: '50%',
+  width: '50px',
+  height: '50px',
+  backgroundColor: '#3f51b5', // Indigo color
+  color: '#fff',
+  marginRight: '10px',
+  '&:hover': {
+      backgroundColor: '#303f9f', // Darker indigo on hover
+  },
+  boxShadow: '0px 3px 5px rgba(0,0,0,0.2)',
+});
 
 const DoctorDashboard = () => {
   const [patients, setPatients] = useState([]);
-  const [open, setOpen] = useState(false); // Modal visibility
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     date_of_birth: '',
   });
-  const [editMode, setEditMode] = useState(false); // Toggle between Add and Update
-  const [selectedPatientId, setSelectedPatientId] = useState(null); // ID of the patient to update
+  const [editMode, setEditMode] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
-  // Fetch patients on component load
+  // Fetch patients
   useEffect(() => {
     const fetchPatients = async () => {
       const data = await getPatients();
@@ -39,20 +78,20 @@ const DoctorDashboard = () => {
     fetchPatients();
   }, []);
 
-  // Delete a patient
+  // Delete patient
   const handleDelete = async (id) => {
     await deletePatient(id);
     setPatients((prev) => prev.filter((patient) => patient.id !== id));
   };
 
-  // Open the modal for adding a patient
+  // Open Add Patient modal
   const handleOpenAddModal = () => {
     setEditMode(false);
     setFormData({ first_name: '', last_name: '', date_of_birth: '' });
     setOpen(true);
   };
 
-  // Open the modal for updating a patient
+  // Open Update Patient modal
   const handleOpenUpdateModal = (patient) => {
     setEditMode(true);
     setSelectedPatientId(patient.id);
@@ -64,13 +103,13 @@ const DoctorDashboard = () => {
     setOpen(true);
   };
 
-  // Close the modal
+  // Close modal
   const handleClose = () => {
     setOpen(false);
     setSelectedPatientId(null);
   };
 
-  // Handle form submission for create or update
+  // Submit Add or Update form
   const handleSubmit = async () => {
     if (editMode) {
       await updatePatient(selectedPatientId, formData);
@@ -83,72 +122,77 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1>Doctor Dashboard</h1>
-          <h2>Welcome Dr. {user.last_name}!</h2>
-        </div>
-        <div>
-          <Button
-            variant="contained"
-            color="primary"
-            style={{ marginRight: '10px' }}
-            onClick={handleOpenAddModal}
-          >
-            Add Patient
-          </Button>
+    <Container>
+      {/* Top Bar */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography variant="h4" fontWeight="bold">
+          HeartTrack
+        </Typography>
+        <Box>
+          <CircularButton onClick={handleOpenAddModal} title="Add Patient">
+            <PersonAddIcon />
+          </CircularButton>
+          <HomeButton />
           <LogoutButton />
-        </div>
-      </div>
+        </Box>
+      </Box>
+
+      {/* Welcome Section */}
+      <Box mb={4}>
+        <Typography variant="h6">Welcome</Typography>
+        <Typography variant="h4" fontWeight="bold">
+          Dr. {user.last_name}
+        </Typography>
+      </Box>
 
       {/* Patients Table */}
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>First Name</TableCell>
-            <TableCell>Last Name</TableCell>
-            <TableCell>Date of Birth</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {patients.map((patient) => (
-            <TableRow
-              key={patient.id}
-              onClick={() => navigate(`/patients/${patient.id}`)} // Navigate to detail page
-              style={{ cursor: 'pointer' }}
-            >
-              <TableCell>{patient.first_name}</TableCell>
-              <TableCell>{patient.last_name}</TableCell>
-              <TableCell>{patient.date_of_birth}</TableCell>
-              <TableCell>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenUpdateModal(patient);
-                  }}
-                  color="primary"
-                >
-                  Update
-                </Button>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(patient.id);
-                  }}
-                  color="error"
-                >
-                  Delete
-                </Button>
-              </TableCell>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>First Name</TableCell>
+              <TableCell>Last Name</TableCell>
+              <TableCell>Date of Birth</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {patients.map((patient) => (
+              <TableRow
+                key={patient.id}
+                onClick={() => navigate(`/patients/${patient.id}`)} // Navigate to details
+                style={{ cursor: 'pointer' }}
+              >
+                <TableCell>{patient.first_name}</TableCell>
+                <TableCell>{patient.last_name}</TableCell>
+                <TableCell>{patient.date_of_birth}</TableCell>
+                <TableCell>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenUpdateModal(patient);
+                    }}
+                    color="primary"
+                  >
+                    Update
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(patient.id);
+                    }}
+                    color="error"
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {/* Add/Update Patient Modal */}
+      {/* Add/Update Patient Dialog */}
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editMode ? 'Update Patient' : 'Add Patient'}</DialogTitle>
         <DialogContent>
@@ -185,7 +229,7 @@ const DoctorDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Container>
   );
 };
 
