@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getPatients, deletePatient, updatePatient } from '../api/patients';
+import { getPatients, deletePatient, updatePatient, createPatient } from '../api/patients';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -25,6 +25,7 @@ const DoctorDashboard = () => {
     last_name: '',
     date_of_birth: '',
   });
+  const [editMode, setEditMode] = useState(false); // Toggle between Add and Update
   const [selectedPatientId, setSelectedPatientId] = useState(null); // ID of the patient to update
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
@@ -44,8 +45,16 @@ const DoctorDashboard = () => {
     setPatients((prev) => prev.filter((patient) => patient.id !== id));
   };
 
-  // Open the update modal and pre-fill patient data
+  // Open the modal for adding a patient
+  const handleOpenAddModal = () => {
+    setEditMode(false);
+    setFormData({ first_name: '', last_name: '', date_of_birth: '' });
+    setOpen(true);
+  };
+
+  // Open the modal for updating a patient
   const handleOpenUpdateModal = (patient) => {
+    setEditMode(true);
     setSelectedPatientId(patient.id);
     setFormData({
       first_name: patient.first_name,
@@ -61,19 +70,40 @@ const DoctorDashboard = () => {
     setSelectedPatientId(null);
   };
 
-  // Handle updating a patient
-  const handleUpdate = async () => {
-    await updatePatient(selectedPatientId, formData);
+  // Handle form submission for create or update
+  const handleSubmit = async () => {
+    if (editMode) {
+      await updatePatient(selectedPatientId, formData);
+    } else {
+      await createPatient(formData);
+    }
     const updatedPatients = await getPatients();
     setPatients(updatedPatients);
     handleClose();
   };
 
   return (
-    <div>
-      <h1>Doctor Dashboard</h1>
-      <h2>Welcome Dr. {user.last_name}!</h2>
-      <LogoutButton />
+    <div style={{ padding: '20px' }}>
+      {/* Header Section */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1>Doctor Dashboard</h1>
+          <h2>Welcome Dr. {user.last_name}!</h2>
+        </div>
+        <div>
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ marginRight: '10px' }}
+            onClick={handleOpenAddModal}
+          >
+            Add Patient
+          </Button>
+          <LogoutButton />
+        </div>
+      </div>
+
+      {/* Patients Table */}
       <Table>
         <TableHead>
           <TableRow>
@@ -96,7 +126,7 @@ const DoctorDashboard = () => {
               <TableCell>
                 <Button
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent row click navigation
+                    e.stopPropagation();
                     handleOpenUpdateModal(patient);
                   }}
                   color="primary"
@@ -105,7 +135,7 @@ const DoctorDashboard = () => {
                 </Button>
                 <Button
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent row click navigation
+                    e.stopPropagation();
                     handleDelete(patient.id);
                   }}
                   color="error"
@@ -118,9 +148,9 @@ const DoctorDashboard = () => {
         </TableBody>
       </Table>
 
-      {/* Update Patient Modal */}
+      {/* Add/Update Patient Modal */}
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Update Patient</DialogTitle>
+        <DialogTitle>{editMode ? 'Update Patient' : 'Add Patient'}</DialogTitle>
         <DialogContent>
           <TextField
             label="First Name"
@@ -143,14 +173,15 @@ const DoctorDashboard = () => {
             margin="dense"
             value={formData.date_of_birth}
             onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+            InputLabelProps={{ shrink: true }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleUpdate} color="primary">
-            Update
+          <Button onClick={handleSubmit} color="primary">
+            {editMode ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
